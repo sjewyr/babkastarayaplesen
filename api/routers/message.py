@@ -7,5 +7,5 @@ message_router = APIRouter(prefix="/message")
 
 
 @message_router.post("/proccess_message")
-def proccess_message(db = Depends(get_db_connection)):
+def proccess_message(db=Depends(get_db_connection)):
     logging.info("крууууто")
