@@ -17,6 +17,7 @@ migrate(db)
 
 app = FastAPI()
 conf = dynaconf.Dynaconf(settings_files="config.toml")
+app.state.db = db
 app.include_router(router_register, tags=["register"])
 app.include_router(message_router, tags=["message"])
 
