@@ -1,0 +1,10 @@
+{
+  "subject": "Intermediate CA1",
+  "issuer": "Root CA",
+  "public_key": [
+    65537,
+    93728491238471238947238947238947
+  ],
+  "timestamp": 1717185660,
+  "signature": 74889315242569063822195321213510661702
+}
