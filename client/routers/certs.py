@@ -7,9 +7,8 @@ from client.usecases.all_certs import all_certs_usecase
 router_certificate = APIRouter(prefix="/certs")
 
 
-@router_certificate.post("/generate_keys")
+@router_certificate.post("/generate_keys_and_cert")
 def generate_keys():
-    logging.info("Даааа кайфуем")
     return generate_keys_usecase()
 
 
