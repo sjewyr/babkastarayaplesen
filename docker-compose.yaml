@@ -2,7 +2,7 @@ services:
   client1:
     build: "./client/"
     ports:
-      - 8002:8002
+      - 8002:8000
     container_name: client1
     environment:
       - CLIENT_NAME="Client1"
