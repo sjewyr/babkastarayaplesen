@@ -16,10 +16,21 @@ def custom_hash(data_str: str, n: int) -> int:
 
 def generate_keys_usecase() -> Dict[str, Any]:
     try:
+        # Получение CLIENT_NAME из переменной окружения
+        client_name = os.getenv("CLIENT_NAME")
+        if not client_name:
+            raise ValueError("Переменная окружения CLIENT_NAME не установлена")
+
         # Шаг 1. Запрос сертификата клиента и ключей
         external_endpoint = "http://ca1:8001/cert"
-        logger.info("Запрос сертификата клиента и ключей с: %s", external_endpoint)
-        response = requests.get(external_endpoint, timeout=10)
+        logger.info("Запрос сертификата клиента и ключей с: %s, subject: %s", external_endpoint, client_name)
+        
+        # Отправка POST-запроса с телом {"subject": client_name}
+        response = requests.post(
+            external_endpoint,
+            json={"subject": client_name},
+            timeout=10
+        )
         response.raise_for_status()
 
         data = response.json()
