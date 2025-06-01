@@ -81,3 +81,9 @@ def custom_hash(message: str, n: int) -> int:
         hash_val = ((hash_val * 33) + ord(c)) ^ (hash_val >> 8)
         hash_val = (hash_val * 0x9e3779b9) % n
     return hash_val % n
+
+# Функция для унификации формирования data_str
+# Принимает subject, публичный ключ [e, n], и timestamp
+# Возвращает строку формата "subject|e|n|timestamp"
+def construct_data_str(subject: str, public_key: List[int], timestamp: int) -> str:
+    return f"{subject}|{public_key[0]}|{public_key[1]}|{timestamp}"

@@ -4,7 +4,7 @@ import time
 import os
 import json
 import logging
-from crypto_utils import generate_keys, custom_hash
+from crypto_utils import generate_keys, custom_hash, construct_data_str
 
 app = FastAPI()
 
@@ -91,7 +91,8 @@ def sign_ica_cert(req: ICACertRequest):
     if not root_cert:
         raise HTTPException(status_code=400, detail="Сертификат Root CA не выпущен")
 
-    data_str = f"{req.subject}|{req.public_key[0]}|{req.public_key[1]}|{req.timestamp}"
+    # Формируем data_str единообразно через construct_data_str
+    data_str = construct_data_str(req.subject, req.public_key, req.timestamp)
     r = custom_hash(data_str, keys["n"])
     s = pow(r, keys["d"], keys["n"])
 
@@ -109,6 +110,7 @@ def sign_ica_cert(req: ICACertRequest):
         json.dump(signed_cert, f, indent=2)
 
     logging.info(
-        f"Подписан сертификат для '{req.subject}': public_key={req.public_key}, timestamp={req.timestamp}, r={r}, s={s}"
+        f"Подписан сертификат для '{req.subject}': public_key={req.public_key}, "
+        f"timestamp={req.timestamp}, r={r}, s={s}"
     )
     return signed_cert
