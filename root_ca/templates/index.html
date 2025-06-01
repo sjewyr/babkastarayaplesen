@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Root CA Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #logArea { width: 100%; height: 300px; }
+        button { margin-right: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Root CA Dashboard</h1>
+    <div>
+        <button onclick="generateKeys()">Сгенерировать ключи</button>
+        <button onclick="issueRootCert()">Выпустить Root-сертификат</button>
+        <button onclick="fetchRootCert()">Показать Root-сертификат</button>
+    </div>
+    <h2>Лог операций</h2>
+    <textarea id="logArea" readonly></textarea>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

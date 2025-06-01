@@ -1,5 +1,5 @@
 import time
-from typing import Tuple
+from typing import Tuple, List, List
 
 # Набор малых простых для предварительной проверки
 SMALL_PRIMES = [

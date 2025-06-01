@@ -1,15 +1,23 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import time
 import os
 import json
 import logging
+from typing import List
 from crypto_utils import generate_keys, custom_hash, construct_data_str
 
 app = FastAPI()
 
+# Монтируем статические файлы и шаблоны
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 # Настройка логирования
-LOG_PATH = os.path.join(os.getcwd(), "data", "logs")
+LOG_PATH = "/app/data/logs"
 os.makedirs(LOG_PATH, exist_ok=True)
 log_file = os.path.join(LOG_PATH, "service.log")
 
@@ -25,20 +33,24 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S,%f'
 )
 
-# Хранилище в памяти
+# В памяти храним ключи и сертификат
 keys: dict[str, int] = {}
 root_cert: dict = {}
 
-# Директории
-CERT_STORE = os.path.join(os.getcwd(), "cert_store")
+# Каталоги
+CERT_STORE = "/app/cert_store"
 SIGNED_ICA_DIR = os.path.join(CERT_STORE, "signed_ica_certs")
 os.makedirs(SIGNED_ICA_DIR, exist_ok=True)
 
-# Модель запроса
+# Модель CSR-запроса
 class ICACertRequest(BaseModel):
     subject: str
-    public_key: list[int]  # [e, n]
+    public_key: List[int]
     timestamp: int
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate_keys")
 def generate_keys_endpoint():
@@ -55,7 +67,7 @@ def issue_root_cert():
     public_key = [keys["e"], keys["n"]]
     timestamp = int(time.time())
 
-    data_str = f"{subject}|{public_key[0]}|{public_key[1]}|{timestamp}"
+    data_str = construct_data_str(subject, public_key, timestamp)
     r = custom_hash(data_str, keys["n"])
     s = pow(r, keys["d"], keys["n"])
 
@@ -81,7 +93,7 @@ def issue_root_cert():
 def send_root_cert():
     if not root_cert:
         raise HTTPException(status_code=404, detail="Root certificate not issued yet")
-    logging.info(f"Отправлен Root Certificate: subject={root_cert['subject']}" )
+    logging.info(f"Отправлен Root Certificate: subject={root_cert['subject']}")
     return root_cert
 
 @app.post("/sign_ica_cert")
@@ -91,7 +103,6 @@ def sign_ica_cert(req: ICACertRequest):
     if not root_cert:
         raise HTTPException(status_code=400, detail="Сертификат Root CA не выпущен")
 
-    # Формируем data_str единообразно через construct_data_str
     data_str = construct_data_str(req.subject, req.public_key, req.timestamp)
     r = custom_hash(data_str, keys["n"])
     s = pow(r, keys["d"], keys["n"])
@@ -100,6 +111,7 @@ def sign_ica_cert(req: ICACertRequest):
         "subject": req.subject,
         "issuer": root_cert["subject"],
         "public_key": req.public_key,
+        "public_key_c": root_cert["public_key"],
         "timestamp": req.timestamp,
         "signature": {"r": r, "s": s}
     }
@@ -110,7 +122,18 @@ def sign_ica_cert(req: ICACertRequest):
         json.dump(signed_cert, f, indent=2)
 
     logging.info(
-        f"Подписан сертификат для '{req.subject}': public_key={req.public_key}, "
-        f"timestamp={req.timestamp}, r={r}, s={s}"
+        f"Подписан сертификат для '{req.subject}': public_key={req.public_key}, public_key_c={root_cert['public_key']}, timestamp={req.timestamp}, r={r}, s={s}"
     )
     return signed_cert
+
+@app.get("/get_logs")
+def get_logs():
+    # Читаем весь лог и отдаём без временных меток
+    lines = []
+    with open(log_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            # Убираем всё до ']' (включительно)
+            if ']' in line:
+                text = line.split('] ', 1)[1].rstrip()
+                lines.append(text)
+    return JSONResponse(lines)

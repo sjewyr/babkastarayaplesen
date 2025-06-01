@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  root_ca:
+    image: root_ca_image
+    container_name: root_ca
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./data:/app/data"
+      - "./cert_store:/app/cert_store"
+    restart: unless-stopped
