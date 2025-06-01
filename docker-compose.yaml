@@ -5,7 +5,7 @@ services:
       - 8002:8002
     container_name: client1
     environment:
-      - CLIENT_PORT=8002
+      - CLIENT_NAME="Client1"
     networks:
       - default
   root_ca:
