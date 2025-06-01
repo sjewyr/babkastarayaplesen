@@ -1,4 +1,3 @@
-import random
 import time
 from typing import Tuple
 
@@ -27,7 +26,8 @@ def is_prime(n: int, iterations: int = 5) -> bool:
         if n % p == 0:
             return False
     for _ in range(iterations):
-        a = random.randint(2, n - 2)
+        # Генерируем базу a в диапазоне [2, n-2] с помощью custom_random
+        a = custom_random(2, n - 2)
         if pow(a, n - 1, n) != 1:
             return False
     return True
@@ -35,7 +35,15 @@ def is_prime(n: int, iterations: int = 5) -> bool:
 # Генерация случайного простого числа заданной битовой длины
 def generate_prime(bits: int = 64) -> int:
     while True:
-        candidate = random.getrandbits(bits) | 1 | (1 << (bits - 1))
+        # Генерируем случайное нечетное candidate с custom_random
+        candidate = 0
+        # Устанавливаем старший и младший бит
+        candidate |= (1 << (bits - 1)) | 1
+        # Заполняем остальные биты псевдослучайно
+        for i in range(1, bits - 1):
+            bit = custom_random(0, 1)
+            if bit == 1:
+                candidate |= (1 << i)
         if is_prime(candidate):
             return candidate
 
