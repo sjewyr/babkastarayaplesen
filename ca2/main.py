@@ -79,7 +79,7 @@ def request_ica_cert():
             raise HTTPException(status_code=400, detail="Сначала вызовите /generate_keys")
 
         public_key = [keys["e"], keys["n"]]
-        subject = "Intermediate CA1"
+        subject = "Intermediate CA2 "
 
         timestamp = int(time.time())
         ica_request = {
