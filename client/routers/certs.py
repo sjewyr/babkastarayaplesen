@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter
 from usecases.generate_keys import generate_keys_usecase
-from client.usecases.all_certs import all_certs_usecase
+from usecases.all_certs import all_certs_usecase
 
 
 router_certificate = APIRouter(prefix="/certs")
