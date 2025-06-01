@@ -6,7 +6,7 @@ import json
 import logging
 import time
 import requests
-from utils import generate_keys, custom_hash
+from utils import generate_keys, custom_hash, construct_data_str
 
 FIRST_SERVER_URL = "http://root_ca:8000"
 CERT_PATH = "signed_ica_certs"
@@ -136,7 +136,7 @@ def all_certs():
 
 
 @app.get("/cert")
-def client_cert():
+def client_cert(subject: str):
     client_keys: dict[str, int] = {}
     p, q, n, e, d = generate_keys()
     client_keys.update({"p": p, "q": q, "n": n, "e": e, "d": d})
@@ -148,20 +148,26 @@ def client_cert():
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Ошибка чтения JSON из файла")
 
-    subject = cert_data.get("subject")
     timestamp = int(time.time())
+    public_key_c = [client_keys["e"], client_keys["n"]]
 
-    data_str = f"client1|{client_keys['e']}|{client_keys['n']}|{timestamp}"
-    hash_val = custom_hash(data_str, keys["n"])
-    signature = pow(hash_val, keys["d"], keys["n"])
-    public_key = [client_keys["e"], client_keys["n"]]
+    data_str = construct_data_str(subject, public_key_c, timestamp)
+    r = custom_hash(data_str, keys["n"])
+    s = pow(r, keys["d"], keys["n"])
+    signature = {"r": r, "s": s}
+    public_key = [keys["e"], keys["n"]]
 
     signed_cert = {
-        "subject": "client1",
-        "issuer": subject,
+        "public_key": public_key_c,
+        "private_key": client_keys["d"],
+        "certificate": {
+        "subject": subject,
+        "issuer": "Intermediate CA1",
         "public_key": public_key,
+        "public_key_c": public_key_c,
         "timestamp": timestamp,
         "signature": signature
+        }
     }
 
     return signed_cert
