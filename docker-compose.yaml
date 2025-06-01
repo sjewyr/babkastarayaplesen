@@ -1,0 +1,25 @@
+services:
+  client1:
+    build: "./client/"
+    ports:
+      - 8002:8002
+    container_name: client1
+    environment:
+      - CLIENT_PORT=8002
+    networks:
+      - default
+  root_ca:
+    build: "./root_ca"
+    container_name: root_ca
+    ports:
+      - 8000:8000
+    networks:
+      - default
+    
+    
+  ca1:
+    build: ./ca1
+    ports:
+      - "8001:8001"
+    networks:
+      - default
