@@ -25,19 +25,19 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S,%f'
 )
 
-# В памяти
+# Хранилище в памяти
 keys: dict[str, int] = {}
 root_cert: dict = {}
 
-# Каталоги
+# Директории
 CERT_STORE = os.path.join(os.getcwd(), "cert_store")
 SIGNED_ICA_DIR = os.path.join(CERT_STORE, "signed_ica_certs")
 os.makedirs(SIGNED_ICA_DIR, exist_ok=True)
 
-# Модель запроса на подпись
+# Модель запроса
 class ICACertRequest(BaseModel):
     subject: str
-    public_key: list[int]    # [e, n]
+    public_key: list[int]  # [e, n]
     timestamp: int
 
 @app.post("/generate_keys")
@@ -51,13 +51,13 @@ def generate_keys_endpoint():
 def issue_root_cert():
     if not keys:
         raise HTTPException(status_code=400, detail="Сначала вызовите /generate_keys")
-    
     subject = "Root CA"
     public_key = [keys["e"], keys["n"]]
     timestamp = int(time.time())
+
     data_str = f"{subject}|{public_key[0]}|{public_key[1]}|{timestamp}"
-    hash_val = custom_hash(data_str, keys["n"])
-    signature = pow(hash_val, keys["d"], keys["n"])
+    r = custom_hash(data_str, keys["n"])
+    s = pow(r, keys["d"], keys["n"])
 
     root_cert.clear()
     root_cert.update({
@@ -65,7 +65,7 @@ def issue_root_cert():
         "issuer": subject,
         "public_key": public_key,
         "timestamp": timestamp,
-        "signature": signature
+        "signature": {"r": r, "s": s}
     })
 
     path = os.path.join(CERT_STORE, "root_cert.json")
@@ -73,8 +73,7 @@ def issue_root_cert():
         json.dump(root_cert, f, indent=2)
 
     logging.info(
-        f"Выпущен self-signed Root сертификат: subject={subject}, "
-        f"public_key={public_key}, timestamp={timestamp}, signature={signature}"
+        f"Выпущен self-signed Root сертификат: subject={subject}, public_key={public_key}, timestamp={timestamp}, r={r}, s={s}"
     )
     return root_cert
 
@@ -82,7 +81,7 @@ def issue_root_cert():
 def send_root_cert():
     if not root_cert:
         raise HTTPException(status_code=404, detail="Root certificate not issued yet")
-    logging.info(f"Отправлен Root Certificate: subject={root_cert['subject']}")
+    logging.info(f"Отправлен Root Certificate: subject={root_cert['subject']}" )
     return root_cert
 
 @app.post("/sign_ica_cert")
@@ -93,15 +92,15 @@ def sign_ica_cert(req: ICACertRequest):
         raise HTTPException(status_code=400, detail="Сертификат Root CA не выпущен")
 
     data_str = f"{req.subject}|{req.public_key[0]}|{req.public_key[1]}|{req.timestamp}"
-    hash_val = custom_hash(data_str, keys["n"])
-    signature = pow(hash_val, keys["d"], keys["n"])
+    r = custom_hash(data_str, keys["n"])
+    s = pow(r, keys["d"], keys["n"])
 
     signed_cert = {
         "subject": req.subject,
         "issuer": root_cert["subject"],
         "public_key": req.public_key,
         "timestamp": req.timestamp,
-        "signature": signature
+        "signature": {"r": r, "s": s}
     }
 
     filename = f"{req.subject.replace(' ', '_')}.json"
@@ -110,7 +109,6 @@ def sign_ica_cert(req: ICACertRequest):
         json.dump(signed_cert, f, indent=2)
 
     logging.info(
-        f"Подписан сертификат для '{req.subject}': "
-        f"public_key={req.public_key}, timestamp={req.timestamp}, signature={signature}"
+        f"Подписан сертификат для '{req.subject}': public_key={req.public_key}, timestamp={req.timestamp}, r={r}, s={s}"
     )
     return signed_cert
