@@ -1,6 +1,6 @@
 import time
 from typing import List, Tuple
-from dtos import Signature
+from usecases.dtos import Signature
 
 # Набор малых простых для предварительной проверки
 SMALL_PRIMES = [

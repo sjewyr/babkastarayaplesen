@@ -3,8 +3,8 @@ import os
 import time
 import requests
 
-from crypto_utils import custom_hash
-from dtos import Certificate, IncomingMessage, Signature
+from usecases.crypto_utils import custom_hash
+from usecases.dtos import Certificate, IncomingMessage, Signature
 
 
 def send_message_usecase(client_id: int, message: str):

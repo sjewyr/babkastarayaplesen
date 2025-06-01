@@ -2,9 +2,9 @@
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 import pydantic
-from crypto_utils import construct_data_str, custom_hash, check_signature
+from usecases.crypto_utils import construct_data_str, custom_hash, check_signature
 
-from dtos import IncomingMessage
+from usecases.dtos import IncomingMessage
 
 def get_message_usecase(request: Request, message: IncomingMessage):
     msg = message.message

@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, Request
 
-from client.usecases.dtos import IncomingMessage
+from usecases.dtos import IncomingMessage
 from dependencies.db_connection import get_db_connection
 from usecases.get_message import get_message_usecase
 from usecases.send_mesage import send_message_usecase
