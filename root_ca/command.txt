@@ -1,0 +1,5 @@
+docker build -t root_ca_image . 
+
+docker rm -f root_ca
+
+docker run -d --name root_ca -p 8000:8000 -v "C:\Users\Lenovo\Desktop\babkastarayaplesen\root_ca\data:/app/data" -v "C:\Users\Lenovo\Desktop\babkastarayaplesen\root_ca\cert_store:/app/cert_store" root_ca_image
