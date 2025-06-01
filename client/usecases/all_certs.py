@@ -7,7 +7,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def all_certs_usecase() -> Dict[str, Any]:
     try:
         external_endpoint = "http://ca1:8001/all_certs"
@@ -25,44 +24,47 @@ def all_certs_usecase() -> Dict[str, Any]:
             raise ValueError("Ожидалось 2 сертификата")
 
         # Проверяем формат каждого сертификата
-        required_keys = [
-            "subject",
-            "issuer",
-            "public_key",
-            "public_key_c",
-            "timestamp",
-            "signature",
-        ]
-        # for cert in certs:
-            # if not all(key in cert for key in required_keys):
-            #     raise ValueError(
-            #         "Сертификаты имеют неверный формат: отсутствуют обязательные ключи"
-            #     )
+        required_keys_common = ["subject", "issuer", "public_key", "timestamp", "signature"]
+        signature_keys = ["r", "s"]
 
-            # Дополнительная валидация структуры public_key и public_key_c
-            # for key in ["public_key", "public_key_c"]:
-            #     if not isinstance(cert[key], list) or len(cert[key]) != 2:
-            #         raise ValueError(f"Поле {key} должно быть списком из двух чисел")
-            #     if not all(isinstance(num, int) for num in cert[key]):
-            #         raise ValueError(f"Элементы {key} должны быть целыми числами")
+        for cert in certs:
+            # Проверка общих ключей
+            if not all(key in cert for key in required_keys_common):
+                raise ValueError("Сертификаты имеют неверный формат: отсутствуют обязательные ключи")
 
-            # # Валидация структуры signature
-            # if not isinstance(cert["signature"], dict):
-            #     raise ValueError("Поле signature должно быть объектом")
-            # if not all(key in cert["signature"] for key in ["r", "s"]):
-            #     raise ValueError("Поле signature должно содержать ключи 'r' и 's'")
-            # if not all(isinstance(cert["signature"][key], int) for key in ["r", "s"]):
-            #     raise ValueError(
-            #         "Значения 'r' и 's' в signature должны быть целыми числами"
-            #     )
+            # Проверка структуры public_key
+            if not isinstance(cert["public_key"], list) or len(cert["public_key"]) != 2:
+                raise ValueError("Поле public_key должно быть списком из двух чисел")
+            if not all(isinstance(num, int) for num in cert["public_key"]):
+                raise ValueError("Элементы public_key должны быть целыми числами")
+
+            # Проверка структуры signature
+            if not isinstance(cert["signature"], dict):
+                raise ValueError("Поле signature должно быть объектом")
+            if not all(key in cert["signature"] for key in signature_keys):
+                raise ValueError("Поле signature должно содержать ключи 'r' и 's'")
+            if not all(isinstance(cert["signature"][key], int) for key in signature_keys):
+                raise ValueError("Значения 'r' и 's' в signature должны быть целыми числами")
+
+            # Проверка public_key_c в зависимости от subject
+            if cert["subject"] == "Root CA":
+                if "public_key_c" in cert:
+                    raise ValueError("Сертификат Root CA не должен содержать поле public_key_c")
+            elif "Intermediate" in cert["subject"]:
+                if not isinstance(cert.get("public_key_c"), list) or len(cert["public_key_c"]) != 2:
+                    raise ValueError("Поле public_key_c в сертификате Intermediate CA должно быть списком из двух чисел")
+                if not all(isinstance(num, int) for num in cert["public_key_c"]):
+                    raise ValueError("Элементы public_key_c в сертификате Intermediate CA должны быть целыми числами")
+            else:
+                raise ValueError(f"Неизвестный subject: {cert['subject']}")
 
         save_dir = "certs"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
         saved_files = []
-        for i, cert in enumerate(certs):  # Исправлено: добавлен индекс i
-            cert_type = "ica_cert" if cert["subject"] == "Root CA" else "root_cert"
+        for cert in certs:
+            cert_type = "root_cert" if cert["subject"] == "Root CA" else "ica_cert"
             filename = f"{save_dir}/{cert_type}.json"
             with open(filename, "w") as f:
                 json.dump(cert, f, indent=4)
@@ -72,18 +74,24 @@ def all_certs_usecase() -> Dict[str, Any]:
         return {
             "status": "success",
             "message": f"Сертификаты сохранены: {saved_files}",
-            "certs": certs,
+            "certs": certs
         }
 
     except requests.exceptions.RequestException as e:
         logger.error("Не получил доступ к сертификатам: %s", str(e))
         return {
             "status": "error",
-            "message": f"Не получил доступ к сертификатам: {str(e)}",
+            "message": f"Не получил доступ к сертификатам: {str(e)}"
         }
     except (ValueError, KeyError) as e:
         logger.error("Валидация не прошла успешно: %s", str(e))
-        return {"status": "error", "message": f"Валидация не прошла успешно: {str(e)}"}
+        return {
+            "status": "error",
+            "message": f"Валидация не прошла успешно: {str(e)}"
+        }
     except Exception as e:
         logger.error("Неожиданная ошибка: %s", str(e))
-        return {"status": "error", "message": f"Неожиданная ошибка: {str(e)}"}
+        return {
+            "status": "error",
+            "message": f"Неожиданная ошибка: {str(e)}"
+        }
