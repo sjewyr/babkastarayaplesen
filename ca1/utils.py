@@ -4,18 +4,41 @@ from typing import Tuple, List
 
 # Набор малых простых для предварительной проверки
 SMALL_PRIMES = [
-    3, 5, 7, 11, 13, 17, 19, 23, 29, 31,
-    37, 41, 43, 47, 53, 59, 61, 67, 71,
-    73, 79, 83, 89, 97
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    31,
+    37,
+    41,
+    43,
+    47,
+    53,
+    59,
+    61,
+    67,
+    71,
+    73,
+    79,
+    83,
+    89,
+    97,
 ]
 
 # Глобальное зерно для псевдослучайного генератора
 last_seed = int(time.time() * 1000)
 
+
 def custom_random(min_val: int, max_val: int) -> int:
     global last_seed
     last_seed = (last_seed + int(time.time() * 1000)) * 25214903917
     return min_val + abs(last_seed) % (max_val - min_val + 1)
+
 
 # Простой тест Ферма + проверка делимости малыми числами
 def is_prime(n: int, iterations: int = 5) -> bool:
@@ -32,6 +55,7 @@ def is_prime(n: int, iterations: int = 5) -> bool:
             return False
     return True
 
+
 # Генерация случайного простого числа заданной битовой длины
 def generate_prime(bits: int = 64) -> int:
     while True:
@@ -39,11 +63,13 @@ def generate_prime(bits: int = 64) -> int:
         if is_prime(candidate):
             return candidate
 
+
 # Вычисление НОД
 def gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
     return a
+
 
 # Модульное обратное (расширенный алгоритм Евклида)
 def modinv(a: int, m: int) -> int:
@@ -55,6 +81,7 @@ def modinv(a: int, m: int) -> int:
         a, m = m, a % m
         x0, x1 = x1 - q * x0, x0
     return x1 + m0 if x1 < 0 else x1
+
 
 # Генерация ключей RSA: p, q, n, e, d
 def generate_keys(bits: int = 64) -> Tuple[int, int, int, int, int]:
@@ -70,13 +97,15 @@ def generate_keys(bits: int = 64) -> Tuple[int, int, int, int, int]:
     d = modinv(e, phi)
     return p, q, n, e, d
 
+
 # Кастомный хеш-функция для строки (возвращает значение mod n)
 def custom_hash(message: str, n: int) -> int:
     hash_val = 5381
     for c in message:
         hash_val = ((hash_val * 33) + ord(c)) ^ (hash_val >> 8)
-        hash_val = (hash_val * 0x9e3779b9) % n
+        hash_val = (hash_val * 0x9E3779B9) % n
     return hash_val % n
+
 
 def construct_data_str(subject: str, public_key: List[int], timestamp: int) -> str:
     return f"{subject}|{public_key[0]}|{public_key[1]}|{timestamp}"

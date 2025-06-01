@@ -5,12 +5,14 @@ class Signature(pydantic.BaseModel):
     r: int
     s: int
 
+
 class Certificate(pydantic.BaseModel):
     subject: str
     issuer: str
     public_key: list[int]
     timestamp: int
     signature: Signature
+
 
 class IncomingMessage(pydantic.BaseModel):
     subject: str
@@ -21,4 +23,4 @@ class IncomingMessage(pydantic.BaseModel):
     signature: Signature
     certificate: Certificate
     root_ca: Certificate
-    ca_ca: Certificate 
+    ca_ca: Certificate

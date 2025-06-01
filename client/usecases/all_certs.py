@@ -7,6 +7,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def all_certs_usecase() -> Dict[str, Any]:
     try:
         external_endpoint = "http://ca1:8001/all_certs"
@@ -24,10 +25,19 @@ def all_certs_usecase() -> Dict[str, Any]:
             raise ValueError("Ожидалось 2 сертификата")
 
         # Проверяем формат каждого сертификата
-        required_keys = ["subject", "issuer", "public_key", "public_key_c", "timestamp", "signature"]
+        required_keys = [
+            "subject",
+            "issuer",
+            "public_key",
+            "public_key_c",
+            "timestamp",
+            "signature",
+        ]
         for cert in certs:
             if not all(key in cert for key in required_keys):
-                raise ValueError("Сертификаты имеют неверный формат: отсутствуют обязательные ключи")
+                raise ValueError(
+                    "Сертификаты имеют неверный формат: отсутствуют обязательные ключи"
+                )
 
             # Дополнительная валидация структуры public_key и public_key_c
             for key in ["public_key", "public_key_c"]:
@@ -42,7 +52,9 @@ def all_certs_usecase() -> Dict[str, Any]:
             if not all(key in cert["signature"] for key in ["r", "s"]):
                 raise ValueError("Поле signature должно содержать ключи 'r' и 's'")
             if not all(isinstance(cert["signature"][key], int) for key in ["r", "s"]):
-                raise ValueError("Значения 'r' и 's' в signature должны быть целыми числами")
+                raise ValueError(
+                    "Значения 'r' и 's' в signature должны быть целыми числами"
+                )
 
         save_dir = "certs"
         if not os.path.exists(save_dir):
@@ -60,24 +72,18 @@ def all_certs_usecase() -> Dict[str, Any]:
         return {
             "status": "success",
             "message": f"Сертификаты сохранены: {saved_files}",
-            "certs": certs
+            "certs": certs,
         }
 
     except requests.exceptions.RequestException as e:
         logger.error("Не получил доступ к сертификатам: %s", str(e))
         return {
             "status": "error",
-            "message": f"Не получил доступ к сертификатам: {str(e)}"
+            "message": f"Не получил доступ к сертификатам: {str(e)}",
         }
     except (ValueError, KeyError) as e:
         logger.error("Валидация не прошла успешно: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Валидация не прошла успешно: {str(e)}"
-        }
+        return {"status": "error", "message": f"Валидация не прошла успешно: {str(e)}"}
     except Exception as e:
         logger.error("Неожиданная ошибка: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Неожиданная ошибка: {str(e)}"
-        }
+        return {"status": "error", "message": f"Неожиданная ошибка: {str(e)}"}

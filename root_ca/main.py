@@ -22,15 +22,15 @@ os.makedirs(LOG_PATH, exist_ok=True)
 log_file = os.path.join(LOG_PATH, "service.log")
 
 # Очистка лога перед запуском
-with open(log_file, 'w'):
+with open(log_file, "w"):
     pass
 
 # Настройка логгера
 logging.basicConfig(
     filename=log_file,
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S,%f'
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S,%f",
 )
 
 # В памяти храним ключи и сертификат
@@ -42,15 +42,18 @@ CERT_STORE = "/app/cert_store"
 SIGNED_ICA_DIR = os.path.join(CERT_STORE, "signed_ica_certs")
 os.makedirs(SIGNED_ICA_DIR, exist_ok=True)
 
+
 # Модель CSR-запроса
 class ICACertRequest(BaseModel):
     subject: str
     public_key: List[int]
     timestamp: int
 
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.post("/generate_keys")
 def generate_keys_endpoint():
@@ -58,6 +61,7 @@ def generate_keys_endpoint():
     keys.update({"p": p, "q": q, "n": n, "e": e, "d": d})
     logging.info(f"Сгенерированы ключи RSA: p={p}, q={q}, n={n}, e={e}, d={d}")
     return {"public_key": [e, n], "private_key": d}
+
 
 @app.post("/issue_root_cert")
 def issue_root_cert():
@@ -72,22 +76,25 @@ def issue_root_cert():
     s = pow(r, keys["d"], keys["n"])
 
     root_cert.clear()
-    root_cert.update({
-        "subject": subject,
-        "issuer": subject,
-        "public_key": public_key,
-        "timestamp": timestamp,
-        "signature": {"r": r, "s": s}
-    })
+    root_cert.update(
+        {
+            "subject": subject,
+            "issuer": subject,
+            "public_key": public_key,
+            "timestamp": timestamp,
+            "signature": {"r": r, "s": s},
+        }
+    )
 
     path = os.path.join(CERT_STORE, "root_cert.json")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(root_cert, f, indent=2)
 
     logging.info(
         f"Выпущен self-signed Root сертификат: subject={subject}, public_key={public_key}, timestamp={timestamp}, r={r}, s={s}"
     )
     return root_cert
+
 
 @app.get("/send_root_cert")
 def send_root_cert():
@@ -96,10 +103,13 @@ def send_root_cert():
     logging.info(f"Отправлен Root Certificate: subject={root_cert['subject']}")
     return root_cert
 
+
 @app.post("/sign_ica_cert")
 def sign_ica_cert(req: ICACertRequest):
     if not keys:
-        raise HTTPException(status_code=400, detail="Сначала вызовите /generate_keys и /issue_root_cert")
+        raise HTTPException(
+            status_code=400, detail="Сначала вызовите /generate_keys и /issue_root_cert"
+        )
     if not root_cert:
         raise HTTPException(status_code=400, detail="Сертификат Root CA не выпущен")
 
@@ -113,12 +123,12 @@ def sign_ica_cert(req: ICACertRequest):
         "public_key": req.public_key,
         "public_key_c": root_cert["public_key"],
         "timestamp": req.timestamp,
-        "signature": {"r": r, "s": s}
+        "signature": {"r": r, "s": s},
     }
 
     filename = f"{req.subject.replace(' ', '_')}.json"
     path = os.path.join(SIGNED_ICA_DIR, filename)
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(signed_cert, f, indent=2)
 
     logging.info(
@@ -126,14 +136,15 @@ def sign_ica_cert(req: ICACertRequest):
     )
     return signed_cert
 
+
 @app.get("/get_logs")
 def get_logs():
     # Читаем весь лог и отдаём без временных меток
     lines = []
-    with open(log_file, 'r', encoding='utf-8') as f:
+    with open(log_file, "r", encoding="utf-8") as f:
         for line in f:
             # Убираем всё до ']' (включительно)
-            if ']' in line:
-                text = line.split('] ', 1)[1].rstrip()
+            if "]" in line:
+                text = line.split("] ", 1)[1].rstrip()
                 lines.append(text)
     return JSONResponse(lines)
