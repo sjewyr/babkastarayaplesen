@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def generate_keys_usecase() -> Dict[str, Any]:
     try:
         # Шаг 1. Запрос сертификата клиента и ключей
-        external_endpoint = "https://localhost:8000/uc/cert" # хз какой endpoint у УЦ для запроса сертификатов
+        external_endpoint = "https://localhost:8001/cert" # хз какой endpoint у УЦ для запроса сертификатов
         logger.info("Запрос сертификата клиента и ключей с: %s", external_endpoint)
         response = requests.get(external_endpoint, timeout=10)
         response.raise_for_status()

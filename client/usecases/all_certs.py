@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def all_certs_usecase() -> Dict[str, Any]:
     try:
-        external_endpoint = "https://localhost:8000/uc/all_certs"
+        external_endpoint = "https://localhost:8001/all_certs"
 
         logger.info("Получаю сертификат УЦ и корневого УЦ: %s", external_endpoint)
         response = requests.get(external_endpoint, timeout=10)
