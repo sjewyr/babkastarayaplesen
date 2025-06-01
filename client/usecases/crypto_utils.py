@@ -1,5 +1,6 @@
 import time
 from typing import List, Tuple
+from dtos import Signature
 
 # Набор малых простых для предварительной проверки
 SMALL_PRIMES = [
@@ -87,3 +88,8 @@ def custom_hash(message: str, n: int) -> int:
 # Возвращает строку формата "subject|e|n|timestamp"
 def construct_data_str(subject: str, public_key: List[int], timestamp: int) -> str:
     return f"{subject}|{public_key[0]}|{public_key[1]}|{timestamp}"
+
+def check_signature(sign: Signature, data_str: str, e: int, n: int):
+    r_from_sign= pow(sign.s, e, n)
+    r_from_msg = custom_hash(data_str)
+    return r_from_msg == r_from_sign
