@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def all_certs_usecase() -> Dict[str, Any]:
     try:
-        external_endpoint = "https://localhost:8001/all_certs"
+        external_endpoint = "http://ca1:8001/all_certs"
 
         logger.info("Получаю сертификат УЦ и корневого УЦ: %s", external_endpoint)
         response = requests.get(external_endpoint, timeout=10)
@@ -33,7 +33,7 @@ def all_certs_usecase() -> Dict[str, Any]:
 
         saved_files = []
         for i, cert in enumerate(certs):
-            cert_type = "ica_cert" if cert["issuer"] == "Root CA" else "root_cert"
+            cert_type = "ica_cert" if cert["subject"] == "Root CA" else "root_cert"
             filename = f"{save_dir}/{cert_type}.json"
             with open(filename, "w") as f:
                 json.dump(cert, f, indent=4)

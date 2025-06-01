@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def generate_keys_usecase() -> Dict[str, Any]:
     try:
         # Шаг 1. Запрос сертификата клиента и ключей
-        external_endpoint = "https://localhost:8001/cert" # хз какой endpoint у УЦ для запроса сертификатов
+        external_endpoint = "http://ca1:8001/cert" # хз какой endpoint у УЦ для запроса сертификатов
         logger.info("Запрос сертификата клиента и ключей с: %s", external_endpoint)
         response = requests.get(external_endpoint, timeout=10)
         response.raise_for_status()
@@ -99,6 +99,7 @@ def generate_keys_usecase() -> Dict[str, Any]:
         # Проверка подписи сертификата клиента с помощью открытого ключа ICA
         logger.info("Проверка подписи сертификата клиента с помощью открытого ключа ICA")
         client_cert_data = cert_to_der_like(data)
+        print(ica_cert)
         if not verify_ecdsa_signature(
             client_cert_data, 
             data['signature'], 
@@ -152,7 +153,7 @@ def generate_keys_usecase() -> Dict[str, Any]:
             "status": "error",
             "message": f"Ошибка с файлами: {str(e)}"
         }
-    except Exception as e:
+    except ConnectionAbortedError as e:
         logger.error("Непредвиденная ошибка: %s", str(e))
         return {
             "status": "error",
