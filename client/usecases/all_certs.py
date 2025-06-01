@@ -33,28 +33,28 @@ def all_certs_usecase() -> Dict[str, Any]:
             "timestamp",
             "signature",
         ]
-        for cert in certs:
-            if not all(key in cert for key in required_keys):
-                raise ValueError(
-                    "Сертификаты имеют неверный формат: отсутствуют обязательные ключи"
-                )
+        # for cert in certs:
+            # if not all(key in cert for key in required_keys):
+            #     raise ValueError(
+            #         "Сертификаты имеют неверный формат: отсутствуют обязательные ключи"
+            #     )
 
             # Дополнительная валидация структуры public_key и public_key_c
-            for key in ["public_key", "public_key_c"]:
-                if not isinstance(cert[key], list) or len(cert[key]) != 2:
-                    raise ValueError(f"Поле {key} должно быть списком из двух чисел")
-                if not all(isinstance(num, int) for num in cert[key]):
-                    raise ValueError(f"Элементы {key} должны быть целыми числами")
+            # for key in ["public_key", "public_key_c"]:
+            #     if not isinstance(cert[key], list) or len(cert[key]) != 2:
+            #         raise ValueError(f"Поле {key} должно быть списком из двух чисел")
+            #     if not all(isinstance(num, int) for num in cert[key]):
+            #         raise ValueError(f"Элементы {key} должны быть целыми числами")
 
-            # Валидация структуры signature
-            if not isinstance(cert["signature"], dict):
-                raise ValueError("Поле signature должно быть объектом")
-            if not all(key in cert["signature"] for key in ["r", "s"]):
-                raise ValueError("Поле signature должно содержать ключи 'r' и 's'")
-            if not all(isinstance(cert["signature"][key], int) for key in ["r", "s"]):
-                raise ValueError(
-                    "Значения 'r' и 's' в signature должны быть целыми числами"
-                )
+            # # Валидация структуры signature
+            # if not isinstance(cert["signature"], dict):
+            #     raise ValueError("Поле signature должно быть объектом")
+            # if not all(key in cert["signature"] for key in ["r", "s"]):
+            #     raise ValueError("Поле signature должно содержать ключи 'r' и 's'")
+            # if not all(isinstance(cert["signature"][key], int) for key in ["r", "s"]):
+            #     raise ValueError(
+            #         "Значения 'r' и 's' в signature должны быть целыми числами"
+            #     )
 
         save_dir = "certs"
         if not os.path.exists(save_dir):

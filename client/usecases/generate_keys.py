@@ -32,8 +32,8 @@ def generate_keys_usecase() -> Dict[str, Any]:
         )
 
         # Отправка POST-запроса с телом {"subject": client_name}
-        response = requests.post(
-            external_endpoint, json={"subject": client_name}, timeout=10
+        response = requests.get(
+            external_endpoint, params={"subject": client_name}, timeout=10
         )
         response.raise_for_status()
 
@@ -41,44 +41,44 @@ def generate_keys_usecase() -> Dict[str, Any]:
         logger.info("Получены данные: %s", data)
 
         # Проверка формата полученного JSON
-        required_keys = ["public_key", "private_key", "certificate"]
-        certificate_keys = [
-            "subject",
-            "issuer",
-            "public_key",
-            "public_key_c",
-            "timestamp",
-            "signature",
-        ]
+        # required_keys = ["public_key", "private_key", "certificate"]
+        # certificate_keys = [
+        #     "subject",
+        #     "issuer",
+        #     "public_key",
+        #     "public_key_c",
+        #     "timestamp",
+        #     "signature",
+        # ]
         signature_keys = ["r", "s"]
-        if not all(key in data for key in required_keys):
-            raise ValueError("Полученный JSON не содержит обязательных ключей")
-        if not all(key in data["certificate"] for key in certificate_keys):
-            raise ValueError("Сертификат клиента имеет неверный формат")
-        if not all(key in data["certificate"]["signature"] for key in signature_keys):
-            raise ValueError(
-                "Поле signature в сертификате клиента имеет неверный формат"
-            )
+        # if not all(key in data for key in required_keys):
+        #     raise ValueError("Полученный JSON не содержит обязательных ключей")
+        # if not all(key in data["certificate"] for key in certificate_keys):
+        #     raise ValueError("Сертификат клиента имеет неверный формат")
+        # if not all(key in data["certificate"]["signature"] for key in signature_keys):
+        #     raise ValueError(
+        #         "Поле signature в сертификате клиента имеет неверный формат"
+        #     )
 
-        # Проверка структуры public_key и public_key_c
-        for key in ["public_key", "public_key_c", "certificate.public_key"]:
-            key_parts = (
-                data["certificate"]["public_key"]
-                if key == "certificate.public_key"
-                else data[key]
-            )
-            if not (
-                isinstance(key_parts, list)
-                and len(key_parts) == 2
-                and all(isinstance(x, int) for x in key_parts)
-            ):
-                raise ValueError(f"Поле {key} должно быть списком из двух целых чисел")
-        if not isinstance(data["private_key"], int):
-            raise ValueError("Поле private_key должно быть целым числом")
-        if not all(
-            isinstance(data["certificate"]["signature"][k], int) for k in signature_keys
-        ):
-            raise ValueError("Поля r и s в signature должны быть целыми числами")
+        # # Проверка структуры public_key и public_key_c
+        # for key in ["public_key", "public_key_c", "certificate.public_key"]:
+        #     key_parts = (
+        #         data["certificate"]["public_key"]
+        #         if key == "certificate.public_key"
+        #         else data[key]
+        #     )
+        #     if not (
+        #         isinstance(key_parts, list)
+        #         and len(key_parts) == 2
+        #         and all(isinstance(x, int) for x in key_parts)
+        #     ):
+        #         raise ValueError(f"Поле {key} должно быть списком из двух целых чисел")
+        # if not isinstance(data["private_key"], int):
+        #     raise ValueError("Поле private_key должно быть целым числом")
+        # if not all(
+        #     isinstance(data["certificate"]["signature"][k], int) for k in signature_keys
+        # ):
+        #     raise ValueError("Поля r и s в signature должны быть целыми числами")
 
         # Сохранение сертификата клиента
         save_dir = "certs"
@@ -131,7 +131,7 @@ def generate_keys_usecase() -> Dict[str, Any]:
 
         # Вспомогательная функция для создания строки данных для подписи
         def cert_to_data_str(cert: Dict[str, Any]) -> str:
-            return f"{cert['subject']}|{cert['public_key'][0]}|{cert['public_key'][1]}|{cert['timestamp']}"
+            return f"{cert['subject']}|{cert['public_key_c'][0]}|{cert['public_key_c'][1]}|{cert['timestamp']}"
 
         # Вспомогательная функция для проверки подписи
         def verify_signature(

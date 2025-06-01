@@ -5,7 +5,7 @@ services:
       - 8011:8000
     container_name: client1
     environment:
-      - CLIENT_NAME="Client1"
+      - CLIENT_NAME=hui
     networks:
       - default
   root_ca:
