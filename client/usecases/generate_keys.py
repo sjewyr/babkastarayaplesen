@@ -1,18 +1,12 @@
 import requests
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import logging
+from cert import custom_hash, ClientCertificate, IntermediateCertificate, RootCertificate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-def custom_hash(data_str: str, n: int) -> int:
-    hash_val = 5381
-    for c in data_str:
-        hash_val = ((hash_val * 33) + ord(c)) ^ (hash_val >> 8)
-        hash_val = (hash_val * 0x9e3779b9) % n
-    return hash_val % n
 
 def generate_keys_usecase() -> Dict[str, Any]:
     try:
@@ -20,52 +14,22 @@ def generate_keys_usecase() -> Dict[str, Any]:
         client_name = os.getenv("CLIENT_NAME")
         if not client_name:
             raise ValueError("Переменная окружения CLIENT_NAME не установлена")
-        # Удаляем возможные кавычки
         client_name = client_name.strip("'").strip('"')
 
         # Шаг 1. Запрос сертификата клиента и ключей
         external_endpoint = "http://ca1:8001/cert"
-        logger.info(
-            "Запрос сертификата клиента и ключей с: %s, subject: %s",
-            external_endpoint,
-            client_name,
-        )
+        logger.info("Запрос сертификата клиента и ключей с: %s, subject: %s", external_endpoint, client_name)
 
         # Отправка GET-запроса с параметром subject
-        response = requests.get(
-            external_endpoint,
-            params={"subject": client_name},
-            timeout=10
-        )
+        response = requests.get(external_endpoint, params={"subject": client_name}, timeout=10)
         response.raise_for_status()
 
         data = response.json()
         logger.info("Получены данные: %s", data)
 
-        # Проверка формата полученного JSON
-        required_keys = ["public_key", "private_key", "certificate"]
-        certificate_keys = ["subject", "issuer", "public_key", "public_key_c", "timestamp", "signature"]
-        signature_keys = ["r", "s"]
-        if not all(key in data for key in required_keys):
-            raise ValueError("Полученный JSON не содержит обязательных ключей")
-        if not all(key in data["certificate"] for key in certificate_keys):
-            raise ValueError("Сертификат клиента имеет неверный формат")
-        if not all(key in data["certificate"]["signature"] for key in signature_keys):
-            raise ValueError("Поле signature в сертификате клиента имеет неверный формат")
-
-        # Проверка структуры public_key и public_key_c
-        for key in ["public_key", "public_key_c", "certificate.public_key"]:
-            key_parts = data["certificate"]["public_key"] if key == "certificate.public_key" else data[key]
-            if not (isinstance(key_parts, list) and len(key_parts) == 2 and all(isinstance(x, int) for x in key_parts)):
-                raise ValueError(f"Поле {key} должно быть списком из двух целых чисел")
-        if not isinstance(data["private_key"], int):
-            raise ValueError("Поле private_key должно быть целым числом")
-        if not all(isinstance(data["certificate"]["signature"][k], int) for k in signature_keys):
-            raise ValueError("Поля r и s в signature должны быть целыми числами")
-
-        # Проверка, что subject в сертификате соответствует client_name
-        if data["certificate"]["subject"] != client_name:
-            raise ValueError(f"Ожидалось subject={client_name}, получено {data['certificate']['subject']}")
+        # Создание объекта клиентского сертификата
+        client_cert = ClientCertificate(data, client_name)
+        client_cert.validate()
 
         # Сохранение сертификата клиента
         save_dir = "certs"
@@ -85,42 +49,21 @@ def generate_keys_usecase() -> Dict[str, Any]:
             raise FileNotFoundError("Сертификат ICA или Root не найден")
 
         with open(ica_cert_path, "r") as f:
-            ica_cert = json.load(f)
+            ica_cert_data = json.load(f)
+            ica_cert = IntermediateCertificate(ica_cert_data)
+            ica_cert.validate()
+
         with open(root_cert_path, "r") as f:
-            root_cert = json.load(f)
+            root_cert_data = json.load(f)
+            root_cert = RootCertificate(root_cert_data)
+            root_cert.validate()
 
         logger.info("Загружены сертификаты ICA и Root")
-
-        # Проверка формата сертификатов ICA и Root
-        for cert in [ica_cert, root_cert]:
-            required_keys = ["subject", "issuer", "public_key", "timestamp", "signature"]
-            if not all(key in cert for key in required_keys):
-                raise ValueError(f"Сертификат {cert.get('subject', 'unknown')} имеет неверный формат")
-            if not (isinstance(cert["public_key"], list) and len(cert["public_key"]) == 2 and all(isinstance(x, int) for x in cert["public_key"])):
-                raise ValueError(f"Поле public_key в сертификате {cert.get('subject', 'unknown')} должно быть списком из двух целых чисел")
-            if not all(isinstance(cert["signature"][k], int) for k in signature_keys):
-                raise ValueError(f"Поля r и s в signature сертификата {cert.get('subject', 'unknown')} должны быть целыми числами")
-            # Проверка public_key_c
-            if cert["subject"] == "Root CA":
-                if "public_key_c" in cert:
-                    raise ValueError(f"Сертификат {cert.get('subject', 'unknown')} не должен содержать поле public_key_c")
-            elif "Intermediate" in cert["subject"]:
-                if not isinstance(cert.get("public_key_c"), list) or len(cert["public_key_c"]) != 2:
-                    raise ValueError(f"Поле public_key_c в сертификате {cert.get('subject', 'unknown')} должно быть списком из двух чисел")
-                if not all(isinstance(num, int) for num in cert["public_key_c"]):
-                    raise ValueError(f"Элементы public_key_c в сертификате {cert.get('subject', 'unknown')} должны быть целыми числами")
-            else:
-                raise ValueError(f"Неизвестный subject в сертификате: {cert['subject']}")
 
         # Проверка цепочки сертификатов
         logger.info("Начало проверки цепочки сертификатов")
 
-        # Вспомогательная функция для создания строки данных для подписи
-        def cert_to_data_str(cert: Dict[str, Any]) -> str:
-            return f"{cert['subject']}|{cert['public_key'][0]}|{cert['public_key'][1]}|{cert['timestamp']}"
-
-        # Вспомогательная функция для проверки подписи
-        def verify_signature(data_str: str, signature: Dict[str, int], public_key: list) -> bool:
+        def verify_signature(data_str: str, signature: Dict[str, int], public_key: Tuple[int, int]) -> bool:
             try:
                 e, n = public_key
                 s = signature["s"]
@@ -138,20 +81,20 @@ def generate_keys_usecase() -> Dict[str, Any]:
 
         # Проверка подписи сертификата клиента с помощью открытого ключа ICA
         logger.info("Проверка подписи сертификата клиента с помощью открытого ключа ICA")
-        client_cert_data = cert_to_data_str(data["certificate"])
-        if not verify_signature(client_cert_data, data["certificate"]["signature"], ica_cert["public_key"]):
+        client_cert_data = client_cert.to_data_str()
+        if not verify_signature(client_cert_data, client_cert.signature, ica_cert.public_key):
             raise ValueError("Подпись сертификата клиента не верна")
 
         # Проверка подписи сертификата ICA с помощью открытого ключа Root
         logger.info("Проверка подписи сертификата ICA с помощью открытого ключа Root")
-        ica_cert_data = cert_to_data_str(ica_cert)
-        if not verify_signature(ica_cert_data, ica_cert["signature"], root_cert["public_key"]):
+        ica_cert_data = ica_cert.to_data_str()
+        if not verify_signature(ica_cert_data, ica_cert.signature, root_cert.public_key):
             raise ValueError("Подпись сертификата ICA не верна")
 
         # Проверка самоподписанного сертификата Root
         logger.info("Проверка самоподписанного сертификата Root")
-        root_cert_data = cert_to_data_str(root_cert)
-        if not verify_signature(root_cert_data, root_cert["signature"], root_cert["public_key"]):
+        root_cert_data = root_cert.to_data_str()
+        if not verify_signature(root_cert_data, root_cert.signature, root_cert.public_key):
             raise ValueError("Подпись сертификата Root не верна")
 
         logger.info("Проверка цепочки сертификатов успешно завершена")
