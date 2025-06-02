@@ -2,4 +2,4 @@ fastapi
 uvicorn
 dynaconf
 requests
-cryptography
+jinja2
