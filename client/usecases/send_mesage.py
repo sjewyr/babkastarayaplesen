@@ -12,11 +12,11 @@ def send_message_usecase(client_id: int, message: str):
     private_key = 12345
     r = custom_hash(message, public_keys[1])
     s = pow(r, private_key, public_keys[1])
-    with open("certs/root_cert.json", 'r') as f:
+    with open("certs/root_cert.json", "r") as f:
         root_ca = Certificate(**json.load(f))
-    with open("certs/ica_cert.json", "r") as f: 
+    with open("certs/ica_cert.json", "r") as f:
         ica_ca = Certificate(**json.load(f))
-    with open('certs/client_cert.json') as f:
+    with open("certs/client_cert.json") as f:
         my_ca = Certificate(**json.load(f))
     sign = Signature(r=r, s=s)
     msg = IncomingMessage(

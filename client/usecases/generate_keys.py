@@ -3,10 +3,16 @@ import json
 import os
 from typing import Dict, Any, Tuple
 import logging
-from cert import custom_hash, ClientCertificate, IntermediateCertificate, RootCertificate
+from cert import (
+    custom_hash,
+    ClientCertificate,
+    IntermediateCertificate,
+    RootCertificate,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def generate_keys_usecase() -> Dict[str, Any]:
     try:
@@ -18,10 +24,16 @@ def generate_keys_usecase() -> Dict[str, Any]:
 
         # Шаг 1. Запрос сертификата клиента и ключей
         external_endpoint = "http://ca1:8001/cert"
-        logger.info("Запрос сертификата клиента и ключей с: %s, subject: %s", external_endpoint, client_name)
+        logger.info(
+            "Запрос сертификата клиента и ключей с: %s, subject: %s",
+            external_endpoint,
+            client_name,
+        )
 
         # Отправка GET-запроса с параметром subject
-        response = requests.get(external_endpoint, params={"subject": client_name}, timeout=10)
+        response = requests.get(
+            external_endpoint, params={"subject": client_name}, timeout=10
+        )
         response.raise_for_status()
 
         data = response.json()
@@ -63,7 +75,9 @@ def generate_keys_usecase() -> Dict[str, Any]:
         # Проверка цепочки сертификатов
         logger.info("Начало проверки цепочки сертификатов")
 
-        def verify_signature(data_str: str, signature: Dict[str, int], public_key: Tuple[int, int]) -> bool:
+        def verify_signature(
+            data_str: str, signature: Dict[str, int], public_key: Tuple[int, int]
+        ) -> bool:
             try:
                 e, n = public_key
                 s = signature["s"]
@@ -73,28 +87,38 @@ def generate_keys_usecase() -> Dict[str, Any]:
                     logger.info("Проверка подписи прошла успешно")
                     return True
                 else:
-                    logger.error("Проверка подписи не удалась: r_expected != r_from_signature")
+                    logger.error(
+                        "Проверка подписи не удалась: r_expected != r_from_signature"
+                    )
                     return False
             except Exception as e:
                 logger.error("Ошибка при проверке подписи: %s", str(e))
                 raise
 
         # Проверка подписи сертификата клиента с помощью открытого ключа ICA
-        logger.info("Проверка подписи сертификата клиента с помощью открытого ключа ICA")
+        logger.info(
+            "Проверка подписи сертификата клиента с помощью открытого ключа ICA"
+        )
         client_cert_data = client_cert.client_data_str()
-        if not verify_signature(client_cert_data, client_cert.signature, ica_cert.public_key):
+        if not verify_signature(
+            client_cert_data, client_cert.signature, ica_cert.public_key
+        ):
             raise ValueError("Подпись сертификата клиента не верна")
 
         # Проверка подписи сертификата ICA с помощью открытого ключа Root
         logger.info("Проверка подписи сертификата ICA с помощью открытого ключа Root")
         ica_cert_data = ica_cert.to_data_str()
-        if not verify_signature(ica_cert_data, ica_cert.signature, root_cert.public_key):
+        if not verify_signature(
+            ica_cert_data, ica_cert.signature, root_cert.public_key
+        ):
             raise ValueError("Подпись сертификата ICA не верна")
 
         # Проверка самоподписанного сертификата Root
         logger.info("Проверка самоподписанного сертификата Root")
         root_cert_data = root_cert.to_data_str()
-        if not verify_signature(root_cert_data, root_cert.signature, root_cert.public_key):
+        if not verify_signature(
+            root_cert_data, root_cert.signature, root_cert.public_key
+        ):
             raise ValueError("Подпись сертификата Root не верна")
 
         logger.info("Проверка цепочки сертификатов успешно завершена")
@@ -102,30 +126,18 @@ def generate_keys_usecase() -> Dict[str, Any]:
         return {
             "status": "success",
             "message": f"Сертификат сохранён в {client_cert_path} и проверка цепочки прошла успешно",
-            "data": data
+            "data": data,
         }
 
     except requests.exceptions.RequestException as e:
         logger.error("Не удалось получить данные: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Не удалось получить данные: {str(e)}"
-        }
+        return {"status": "error", "message": f"Не удалось получить данные: {str(e)}"}
     except (ValueError, KeyError) as e:
         logger.error("Ошибка валидации: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Ошибка валидации: {str(e)}"
-        }
+        return {"status": "error", "message": f"Ошибка валидации: {str(e)}"}
     except FileNotFoundError as e:
         logger.error("Ошибка с файлами: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Ошибка с файлами: {str(e)}"
-        }
+        return {"status": "error", "message": f"Ошибка с файлами: {str(e)}"}
     except Exception as e:
         logger.error("Непредвиденная ошибка: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Непредвиденная ошибка: {str(e)}"
-        }
+        return {"status": "error", "message": f"Непредвиденная ошибка: {str(e)}"}

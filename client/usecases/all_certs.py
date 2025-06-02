@@ -8,6 +8,7 @@ from cert import RootCertificate, IntermediateCertificate
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def all_certs_usecase() -> Dict[str, Any]:
     try:
         external_endpoint = "http://ca1:8001/all_certs"
@@ -42,38 +43,38 @@ def all_certs_usecase() -> Dict[str, Any]:
             cert_type = "root_cert" if cert.subject == "Root CA" else "ica_cert"
             filename = f"{save_dir}/{cert_type}.json"
             with open(filename, "w") as f:
-                json.dump({
-                    "subject": cert.subject,
-                    "issuer": cert.issuer,
-                    "public_key": list(cert.public_key),
-                    "public_key_c": list(cert.public_key_c) if cert.public_key_c else None,
-                    "timestamp": cert.timestamp,
-                    "signature": cert.signature
-                }, f, indent=4)
+                json.dump(
+                    {
+                        "subject": cert.subject,
+                        "issuer": cert.issuer,
+                        "public_key": list(cert.public_key),
+                        "public_key_c": list(cert.public_key_c)
+                        if cert.public_key_c
+                        else None,
+                        "timestamp": cert.timestamp,
+                        "signature": cert.signature,
+                    },
+                    f,
+                    indent=4,
+                )
             saved_files.append(filename)
             logger.info("Сертификат сохранен: %s", filename)
 
         return {
             "status": "success",
             "message": f"Сертификаты сохранены: {saved_files}",
-            "certs": certs_data
+            "certs": certs_data,
         }
 
     except requests.exceptions.RequestException as e:
         logger.error("Не получил доступ к сертификатам: %s", str(e))
         return {
             "status": "error",
-            "message": f"Не получил доступ к сертификатам: {str(e)}"
+            "message": f"Не получил доступ к сертификатам: {str(e)}",
         }
     except (ValueError, KeyError) as e:
         logger.error("Валидация не прошла успешно: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Валидация не прошла успешно: {str(e)}"
-        }
+        return {"status": "error", "message": f"Валидация не прошла успешно: {str(e)}"}
     except Exception as e:
         logger.error("Неожиданная ошибка: %s", str(e))
-        return {
-            "status": "error",
-            "message": f"Неожиданная ошибка: {str(e)}"
-        }
+        return {"status": "error", "message": f"Неожиданная ошибка: {str(e)}"}
