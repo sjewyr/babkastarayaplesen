@@ -121,5 +121,5 @@ def construct_data_str(subject: str, public_key: List[int], timestamp: int) -> s
 
 def check_signature(sign: Signature, data_str: str, e: int, n: int):
     r_from_sign = pow(sign.s, e, n)
-    r_from_msg = custom_hash(data_str)
+    r_from_msg = custom_hash(data_str, n)
     return r_from_msg == r_from_sign

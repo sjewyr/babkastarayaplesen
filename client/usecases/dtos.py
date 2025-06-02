@@ -18,7 +18,7 @@ class IncomingMessage(pydantic.BaseModel):
     subject: str
     message: str
     signature: str
-    timestamp: str
+    timestamp: int
     public_keys: list[int]
     signature: Signature
     certificate: Certificate

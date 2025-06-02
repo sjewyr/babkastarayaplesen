@@ -3,27 +3,32 @@ import os
 import time
 import requests
 
-from usecases.crypto_utils import custom_hash
+from usecases.crypto_utils import custom_hash, construct_data_str
 from usecases.dtos import Certificate, IncomingMessage, Signature
 
 
 def send_message_usecase(client_id: int, message: str):
-    public_keys = [65537, 100]  # same
-    private_key = 12345
-    r = custom_hash(message, public_keys[1])
-    s = pow(r, private_key, public_keys[1])
+    
     with open("certs/root_cert.json", "r") as f:
         root_ca = Certificate(**json.load(f))
     with open("certs/ica_cert.json", "r") as f:
         ica_ca = Certificate(**json.load(f))
     with open("certs/client_cert.json") as f:
-        my_ca = Certificate(**json.load(f))
+        data = json.load(f)
+        public_keys = data['public_key']
+        private_key = data['private_key']
+        cert = data['certificate']
+        my_ca = Certificate(**cert)
+    stamp = int(time.time())
+    data_str = construct_data_str(message, public_keys,stamp)
+    r = custom_hash(data_str, public_keys[1])
+    s = pow(r, private_key, public_keys[1])
     sign = Signature(r=r, s=s)
     msg = IncomingMessage(
         subject=os.getenv("CLIENT_NAME"),
         message=message,
         signature=sign,
-        timestamp=int(time.time()),
+        timestamp=stamp,
         public_keys=public_keys,
         certificate=my_ca,
         root_ca=root_ca,
