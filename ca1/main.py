@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import time
 import os
 import json
@@ -13,6 +16,10 @@ CERT_PATH = "signed_ica_certs"
 local_root_cert = None
 
 app = FastAPI()
+
+# Монтируем статические файлы и шаблоны
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # Настройка логирования
 LOG_PATH = os.path.join(os.getcwd(), "data", "logs")
@@ -47,6 +54,9 @@ class ICACertRequest(BaseModel):
     public_key: list[int]  # [e, n]
     timestamp: int
 
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate_keys")
 def generate_keys_endpoint():
@@ -67,7 +77,7 @@ def get_root_cert():
             path = os.path.join("signed_ica_certs", filename)
             with open(path, "w") as f:
                 json.dump(root_cert, f, indent=2)
-            logging.info(f"Получен Root Certificate: subject={root_cert['subject']}")
+            logging.info(f"Получен Root Certificate: subject={root_cert['subject']}, timestamp={root_cert['timestamp']}, r={root_cert['signature']['r']}, s={root_cert['signature']['s']}")
             return root_cert
         else:
             raise HTTPException(
@@ -111,9 +121,6 @@ def request_ica_cert():
         with open(path, "w") as f:
             json.dump(signed_cert, f, indent=2)
 
-        logging.info(
-            f"Получен и сохранён подписанный сертификат для '{subject}': {path}"
-        )
         return signed_cert
 
     except requests.exceptions.HTTPError as e:
@@ -148,7 +155,7 @@ def all_certs():
             raise HTTPException(
                 status_code=500, detail=f"Ошибка чтения файла {filename}"
             )
-
+    logging.info(f"Сертификаты отправлены клиенту")
     return cert_list
 
 
@@ -189,4 +196,17 @@ def client_cert(subject: str):
         },
     }
 
+    logging.info(f"Сгенерированые клиентские ключи и сертификат отправлены клиенту {subject}")
     return signed_cert
+
+@app.get("/get_logs")
+def get_logs():
+    # Читаем весь лог и отдаём без временных меток
+    lines = []
+    with open(log_file, "r", encoding="utf-8") as f:
+        for line in f:
+            # Убираем всё до ']' (включительно)
+            if "]" in line:
+                text = line.split("] ", 1)[1].rstrip()
+                lines.append(text)
+    return JSONResponse(lines)

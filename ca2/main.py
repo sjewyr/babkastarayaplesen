@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import time
 import os
 import json
@@ -13,6 +16,10 @@ CERT_PATH = "signed_ica_certs"
 local_root_cert = None
 
 app = FastAPI()
+
+# Монтируем статические файлы и шаблоны
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # Настройка логирования
 LOG_PATH = os.path.join(os.getcwd(), "data", "logs")
@@ -46,6 +53,10 @@ class ICACertRequest(BaseModel):
     subject: str
     public_key: list[int]  # [e, n]
     timestamp: int
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/generate_keys")
@@ -190,3 +201,15 @@ def client_cert(subject: str):
     }
 
     return signed_cert
+
+@app.get("/get_logs")
+def get_logs():
+    # Читаем весь лог и отдаём без временных меток
+    lines = []
+    with open(log_file, "r", encoding="utf-8") as f:
+        for line in f:
+            # Убираем всё до ']' (включительно)
+            if "]" in line:
+                text = line.split("] ", 1)[1].rstrip()
+                lines.append(text)
+    return JSONResponse(lines)
