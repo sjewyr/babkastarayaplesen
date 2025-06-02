@@ -81,7 +81,7 @@ def generate_keys_usecase() -> Dict[str, Any]:
 
         # Проверка подписи сертификата клиента с помощью открытого ключа ICA
         logger.info("Проверка подписи сертификата клиента с помощью открытого ключа ICA")
-        client_cert_data = client_cert.to_data_str()
+        client_cert_data = client_cert.client_data_str()
         if not verify_signature(client_cert_data, client_cert.signature, ica_cert.public_key):
             raise ValueError("Подпись сертификата клиента не верна")
 

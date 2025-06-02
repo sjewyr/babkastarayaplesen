@@ -34,6 +34,9 @@ class Certificate:
 
     def to_data_str(self) -> str:
         return f"{self.subject}|{self.public_key[0]}|{self.public_key[1]}|{self.timestamp}"
+    
+    def client_data_str(self):
+        return f"{self.subject}|{self.public_key_c[0]}|{self.public_key_c[1]}|{self.timestamp}"
 
 class RootCertificate(Certificate):
     def validate(self) -> None:

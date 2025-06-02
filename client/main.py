@@ -20,4 +20,4 @@ app.include_router(router_certificate, tags=["certs"])
 app.include_router(message_router, tags=["message"])
 
 
-uvicorn.run(app, host=conf.api.host, port=8000)
+uvicorn.run(app, host="0.0.0.0", port=8000)
