@@ -5,7 +5,7 @@ services:
       - 8011:8000
     container_name: client1
     environment:
-      - CLIENT_NAME=Client2
+      - CLIENT_NAME=Client1
       - MY_CA=ca1
     networks:
       - default
