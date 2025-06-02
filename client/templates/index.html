@@ -7,6 +7,9 @@
         body { font-family: Arial, sans-serif; margin: 20px; }
         #logArea { width: 100%; height: 300px; }
         button { margin-right: 10px; margin-bottom: 10px; }
+        .input-group { margin-bottom: 10px; }
+        label { margin-right: 10px; }
+        input, textarea { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -15,6 +18,20 @@
         <div>
             <button id="getAllCertsBtn">Получить сертификаты CA</button>
             <button id="generateKeysBtn">Получить сертификат и ключи</button>
+        </div>
+        <div class="input-group">
+            <h2>Отправка сообщения</h2>
+            <label for="clientId">Client ID:</label>
+            <input type="number" id="clientId" placeholder="Введите ID клиента" />
+            <br />
+            <label for="messageInput">Сообщение:</label>
+            <textarea id="messageInput" placeholder="Введите сообщение"></textarea>
+            <br />
+            <button id="sendMessageBtn">Отправить сообщение</button>
+        </div>
+        <div class="input-group">
+            <h2>Получение сообщения</h2>
+            <button id="getMessageBtn">Получить сообщение</button>
         </div>
         <h2>Лог операций</h2>
         <textarea id="logArea" readonly></textarea>
@@ -25,6 +42,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('generateKeysBtn').addEventListener('click', generateKeysAndCert);
             document.getElementById('getAllCertsBtn').addEventListener('click', getAllCerts);
+            document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+            document.getElementById('getMessageBtn').addEventListener('click', getMessage);
         });
     </script>
 </body>

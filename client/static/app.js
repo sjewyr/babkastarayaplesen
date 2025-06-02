@@ -62,3 +62,63 @@ async function getAllCerts() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Client certificate dashboard initialized');
 });
+
+async function sendMessage() {
+    const clientId = document.getElementById('clientId').value;
+    const message = document.getElementById('messageInput').value;
+
+    if (!clientId || !message) {
+        appendLogEntry('Ошибка: Укажите Client ID и сообщение');
+        return { status: 'error', message: 'Укажите Client ID и сообщение' };
+    }
+
+    appendLogEntry(`Запрос: Отправка сообщения клиенту ${clientId}: "${message}"...`);
+    try {
+        const response = await fetch(`/message/send_message?client_id=${clientId}&msg=${encodeURIComponent(message)}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            appendLogEntry(`Сообщение успешно отправлено:\n${JSON.stringify(data, null, 2)}`);
+        } else {
+            appendLogEntry(`Ошибка: ${data.message}`);
+        }
+        return data;
+    } catch (error) {
+        return handleError(error, 'отправке сообщения');
+    }
+}
+
+async function getMessage() {
+    appendLogEntry('Запрос: Получение сообщения...');
+    try {
+        const response = await fetch('/message/get_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({}) // Пустое тело, так как параметры передаются через сервер
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.check === 'Подпись верна') {
+            appendLogEntry(`Сообщение успешно получено: "${data.message}"\nПроверка: ${data.check}`);
+        } else {
+            appendLogEntry(`Ошибка: ${data.check}`);
+        }
+        return data;
+    } catch (error) {
+        return handleError(error, 'получении сообщения');
+    }
+}
