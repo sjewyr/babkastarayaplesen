@@ -5,7 +5,8 @@ services:
       - 8011:8000
     container_name: client1
     environment:
-      - CLIENT_NAME=hui
+      - CLIENT_NAME=Client2
+      - MY_CA=ca1
     networks:
       - default
   root_ca:
@@ -13,6 +14,36 @@ services:
     container_name: root_ca
     ports:
       - 8000:8000
+    networks:
+      - default
+  client2:
+    build: "./client/"
+    ports:
+      - 8012:8000
+    container_name: client2
+    environment:
+      - CLIENT_NAME=Client2
+      - MY_CA=ca1
+    networks:
+      - default
+  client3:
+    build: "./client/"
+    ports:
+      - 8013:8000
+    container_name: client3
+    environment:
+      - CLIENT_NAME=Client3
+      - MY_CA=ca2
+    networks:
+      - default
+  client4:
+    build: "./client/"
+    ports:
+      - 8014:8000
+    container_name: client4
+    environment:
+      - CLIENT_NAME=Client4
+      - MY_CA=ca2
     networks:
       - default
     
@@ -27,6 +58,6 @@ services:
   ca2:
     build: ./ca2
     ports:
-      - "8002:8002"
+      - "8002:8001"
     networks:
       - default

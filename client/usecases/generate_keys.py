@@ -21,9 +21,9 @@ def generate_keys_usecase() -> Dict[str, Any]:
         if not client_name:
             raise ValueError("Переменная окружения CLIENT_NAME не установлена")
         client_name = client_name.strip("'").strip('"')
-
+        ca = os.getenv("MY_CA")
         # Шаг 1. Запрос сертификата клиента и ключей
-        external_endpoint = "http://ca1:8001/cert"
+        external_endpoint = f"http://{ca}:8001/cert"
         logger.info(
             "Запрос сертификата клиента и ключей с: %s, subject: %s",
             external_endpoint,

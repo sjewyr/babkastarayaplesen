@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 def all_certs_usecase() -> Dict[str, Any]:
     try:
-        external_endpoint = "http://ca1:8001/all_certs"
+        ca = os.getenv("MY_CA")
+        external_endpoint = f"http://{ca}:8001/all_certs"
         logger.info("Получаю сертификат УЦ и корневого УЦ: %s", external_endpoint)
         response = requests.get(external_endpoint, timeout=10)
         response.raise_for_status()
