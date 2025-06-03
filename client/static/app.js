@@ -66,8 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
 async function sendMessage() {
     const clientId = document.getElementById('clientId').value;
     const message = document.getElementById('messageInput').value;
-    const override_r = document.getElementById('override_r').value;
-    const override_s = document.getElementById('override_s').value;
+    const override_r = document.getElementById('override_r').value.trim();
+    const override_s = document.getElementById('override_s').value.trim();
+
+
 
     if (!clientId || !message) {
         appendLogEntry('Ошибка: Укажите Client ID и сообщение');
@@ -76,7 +78,10 @@ async function sendMessage() {
 
     appendLogEntry(`Запрос: Отправка сообщения клиенту ${clientId}: "${message}"...`);
     try {
-        const response = await fetch(`/message/send_message?client_id=${clientId}&msg=${encodeURIComponent(message)}&override_r=${encodeURIComponent(override_r)}&override_s=${encodeURIComponent(override_s)}`, {
+        let url = `/message/send_message?client_id=${encodeURIComponent(clientId)}&msg=${encodeURIComponent(message)}`;
+        if (override_r) url += `&override_r=${encodeURIComponent(override_r)}`;
+        if (override_s) url += `&override_s=${encodeURIComponent(override_s)}`;
+        const response = await fetch(url, {
             method: 'POST'
         });
 

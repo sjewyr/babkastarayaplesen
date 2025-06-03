@@ -29,9 +29,11 @@ def send_message_usecase(
     data_str = construct_data_str(message, public_keys, stamp)
     r = custom_hash(data_str, public_keys[1])
     s = pow(r, private_key, public_keys[1])
+    if override_r:
+        r = override_r
+    if override_s:
+        s = override_s
     sign = Signature(r=r, s=s)
-    if override_r and override_s:
-        sign = Signature(r=override_r, s=override_s)
 
     msg = IncomingMessage(
         subject=os.getenv("CLIENT_NAME"),
