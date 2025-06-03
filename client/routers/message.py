@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from fastapi import APIRouter, Depends, Request, Query
 from usecases.dtos import IncomingMessage
 from dependencies.db_connection import get_db_connection
@@ -14,5 +15,10 @@ def get_message(request: Request, msg: IncomingMessage):
 
 
 @message_router.post("/send_message")
-def send_message(client_id: int = Query(...), msg: str = Query(...)):
-    return send_message_usecase(client_id, msg)
+def send_message(
+    client_id: int = Query(...),
+    msg: str = Query(...),
+    override_r: Optional[int] = None,
+    override_s: Optional[int] = None,
+):
+    return send_message_usecase(client_id, msg, override_r, override_s)

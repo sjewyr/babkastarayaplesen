@@ -27,10 +27,17 @@ app.state.recv_check = "Нечего проверять"
 app.include_router(router_certificate, tags=["certs"])
 app.include_router(message_router, tags=["message"])
 
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "mess": request.app.state.recv_msg,
+            "check": request.app.state.recv_check,
+        },
+    )
 
 
 uvicorn.run(app, host="0.0.0.0", port=8000)
-

@@ -16,9 +16,9 @@ def get_message_usecase(request: Request, message: IncomingMessage):
         ica_ca = Certificate(**json.load(f))
     with open("certs/client_cert.json") as f:
         data = json.load(f)
-        public_keys = data['public_key']
-        private_key = data['private_key']
-        my_cert = data['certificate']
+        public_keys = data["public_key"]
+        private_key = data["private_key"]
+        my_cert = data["certificate"]
         my_ca = Certificate(**my_cert)
     if not check_signature(
         message.signature,
@@ -66,7 +66,7 @@ def get_message_usecase(request: Request, message: IncomingMessage):
             request.app.state.recv_check = "Подпись сертификата корневого УЦ не верна"
             return JSONResponse(
                 {"message": msg, "check": "Подпись сертификата корневого УЦ не верна"},
-                400
+                400,
             )
 
     request.app.state.recv_check = "Подпись верна"

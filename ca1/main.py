@@ -54,9 +54,11 @@ class ICACertRequest(BaseModel):
     public_key: list[int]  # [e, n]
     timestamp: int
 
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.post("/generate_keys")
 def generate_keys_endpoint():
@@ -77,7 +79,9 @@ def get_root_cert():
             path = os.path.join("signed_ica_certs", filename)
             with open(path, "w") as f:
                 json.dump(root_cert, f, indent=2)
-            logging.info(f"Получен Root Certificate: subject={root_cert['subject']}, timestamp={root_cert['timestamp']}, r={root_cert['signature']['r']}, s={root_cert['signature']['s']}")
+            logging.info(
+                f"Получен Root Certificate: subject={root_cert['subject']}, timestamp={root_cert['timestamp']}, r={root_cert['signature']['r']}, s={root_cert['signature']['s']}"
+            )
             return root_cert
         else:
             raise HTTPException(
@@ -196,8 +200,11 @@ def client_cert(subject: str):
         },
     }
 
-    logging.info(f"Сгенерированые клиентские ключи и сертификат отправлены клиенту {subject}")
+    logging.info(
+        f"Сгенерированые клиентские ключи и сертификат отправлены клиенту {subject}"
+    )
     return signed_cert
+
 
 @app.get("/get_logs")
 def get_logs():

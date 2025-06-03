@@ -54,6 +54,7 @@ class ICACertRequest(BaseModel):
     public_key: list[int]  # [e, n]
     timestamp: int
 
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -201,6 +202,7 @@ def client_cert(subject: str):
     }
 
     return signed_cert
+
 
 @app.get("/get_logs")
 def get_logs():

@@ -27,12 +27,20 @@
             <label for="messageInput">Сообщение:</label>
             <textarea id="messageInput" placeholder="Введите сообщение"></textarea>
             <br />
+            <label for="override_r">Изменить подпись (r):</label>
+            <textarea id="override_r"></textarea>
+            <br />
+            <label for="override_s">Изменить подпись (s):</label>
+            <textarea id="override_s"></textarea>
+            <br />
             <button id="sendMessageBtn">Отправить сообщение</button>
         </div>
         <div class="input-group">
             <h2>Получение сообщения</h2>
             <button id="getMessageBtn">Получить сообщение</button>
         </div>
+        <h2>Сообщение: {{mess}}</h2>
+        <h2>Проверка подписи: {{check}}</h2>
         <h2>Лог операций</h2>
         <textarea id="logArea" readonly></textarea>
     </div>

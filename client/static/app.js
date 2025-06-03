@@ -66,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function sendMessage() {
     const clientId = document.getElementById('clientId').value;
     const message = document.getElementById('messageInput').value;
+    const override_r = document.getElementById('override_r').value;
+    const override_s = document.getElementById('override_s').value;
 
     if (!clientId || !message) {
         appendLogEntry('Ошибка: Укажите Client ID и сообщение');
@@ -74,7 +76,7 @@ async function sendMessage() {
 
     appendLogEntry(`Запрос: Отправка сообщения клиенту ${clientId}: "${message}"...`);
     try {
-        const response = await fetch(`/message/send_message?client_id=${clientId}&msg=${encodeURIComponent(message)}`, {
+        const response = await fetch(`/message/send_message?client_id=${clientId}&msg=${encodeURIComponent(message)}&override_r=${encodeURIComponent(override_r)}&override_s=${encodeURIComponent(override_s)}`, {
             method: 'POST'
         });
 
@@ -84,11 +86,9 @@ async function sendMessage() {
 
         const data = await response.json();
 
-        if (data.status === 'success') {
-            appendLogEntry(`Сообщение успешно отправлено:\n${JSON.stringify(data, null, 2)}`);
-        } else {
-            appendLogEntry(`Ошибка: ${data.message}`);
-        }
+        
+        appendLogEntry(`Сообщение успешно отправлено:\n${JSON.stringify(data, null, 2)}`);
+
         return data;
     } catch (error) {
         return handleError(error, 'отправке сообщения');
@@ -112,11 +112,8 @@ async function getMessage() {
 
         const data = await response.json();
 
-        if (data.check === 'Подпись верна') {
-            appendLogEntry(`Сообщение успешно получено: "${data.message}"\nПроверка: ${data.check}`);
-        } else {
-            appendLogEntry(`Ошибка: ${data.check}`);
-        }
+        
+        appendLogEntry(`Сообщение успешно получено: "${data.message}"\nПроверка: ${data.check}`);
         return data;
     } catch (error) {
         return handleError(error, 'получении сообщения');
